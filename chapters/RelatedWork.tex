@@ -1,0 +1,38 @@
+\chapter{Background \& \\Related Work}
+
+\section{Fallacy Detection}
+Da San Martino et al. (2019) \cite{dasanmartinoFineGrainedAnalysisPropaganda2019} were the first to aim to detect propaganda in news articles at a granular level by identifying specific techniques used within the text, rather than labeling entire articles as propagandistic. The authors introduced a new dataset of news articles, annotated with 18 distinct propaganda techniques, such as loaded language, name calling, appeal to fear, and whataboutism. This approach enables a more detailed and explainable analysis of how propaganda operates within specific text fragments.
+% Their main contributions include the creation of a corpus of news articles annotated at the fragment level with 18 propaganda techniques by expert annotators while proposing two new tasks
+%  (i) Sentence-level classification (SLC), which predicts if a sentence contains propaganda, and (ii) Fragment-level classification (FLC), which identifies specific text spans and their associated propaganda techniques. Finally, they introduce a model designed to improve the detection of propaganda, outperforming several strong BERT-based baselines. This fine-grained analysis offers a more precise and explainable approach to understanding propaganda in news articles, moving beyond binary classifications of entire documents.
+
+ Jin et al. (2022) \cite{jinLogicalFallacyDetection2022} focused on detecting logical fallacies in text, a task essential for identifying flawed reasoning that can propagate misinformation The authors introduced the LOGIC dataset, which contains 2,449 samples annotated with 13 types of logical fallacies, along with a specialized climate change dataset (LOGICCLIMATE) for fallacies found in climate discussions. Furthermore, they presented a structure-aware model that outperformed standard language models like BERT and RoBERTa in detecting logical fallacies, significantly improving the F1 score. The model focuses on the logical structure of arguments rather than just the content. 
+This work focuses more on the classification of annotated samples that consist of 2-3 sentences rather than the detection of logical fallacies in large corpora of text.
+
+ Alhindi et al. (2022) \cite{alhindiMultitaskInstructionbasedPrompting2022} explored the detection of fallacies across different types of datasets using a unified multitask framework. The main innovation of the paper was the use of instruction-based prompting with a T5 model, which enabled the model to handle 28 unique fallacies across various genres and domains by transforming them into natural language instructions. This approach significantly outperformed traditional methods trained on specific datasets or tasks, offering a broad, adaptable, and effective system for fallacy recognition.
+The authors address several challenges in fallacy detection, such as dataset heterogeneity and the high number of classification labels, by unifying multiple datasets under a single framework. They demonstrate that their method not only improves the macro F1 scores by considerable margins but also provides insights into the effects of model size and prompt choices on classification accuracy. 
+
+Vorakitphan et al. (2023) \cite{vorakitphanPROTECTPipelinePropaganda2022}  introduced PROTECT (PROpaganda Text dEteCTion), a system designed to automatically detect and classify propaganda in texts. PROTECT uses semantic and argumentation features to analyze texts for propaganda content, identifying the techniques employed.
+PROTECT first identifies propaganda snippets within a given text and then classifies them based on the type of propaganda technique used. The system utilizes a transformer architecture, likely leveraging models like BERT, to perform its classification tasks.
+It is evaluated using standard datasets known for propaganda analysis introduced by Da San Martino et al. (2019)\cite{dasanmartinoFineGrainedAnalysisPropaganda2019}, showing promising results.
+PROTECT is equipped with a user-friendly web interface and API, making it accessible for public use and allowing for the analysis of user-submitted texts.
+This work contributed to the field by providing a tool that not only automates the detection of propaganda but also helps educate the public about the nuances of manipulative content in media.
+
+Goffredo et al. (2023) \cite{goffredoArgumentbasedDetectionClassification2023} delved into the detection and categorization of logical fallacies in political debates. The authors extended a pre-existing dataset of U.S. presidential debates to include the 2020 Trump-Biden debates, enriching it with detailed annotations of argumentative structures and fallacies.
+The methodology focused on a transformer-based neural network model integrating text analysis with argumentative and engineered features, significantly improving the detection and classification of fallacies. 
+The study presents a nuanced approach to handling fallacious arguments by incorporating the relations and components of the arguments, which is a novel contribution to the field of computational linguistics and argument mining.
+% This advancement supports a more informed public discourse by potentially limiting the spread of manipulative or misleading political claims.
+
+\section{Large Language Models}
+
+\begin{enumerate}
+    \item Write about LLMs, attention?
+    \item Reasoning in LLMs
+    \item LLMs and fallacy classification
+\end{enumerate}
+
+
+\section{Chain of Thought}
+
+Wei et al. (2022) \cite{ChainThoughtPromptingElicits} introduced the concept of "Chain-of-Thought Prompting" in their paper Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. This technique involves providing models with a series of intermediate reasoning steps as exemplars during In-Context Learning. Their findings showed that models with over 100 billion parameters experienced significant improvements in solving complex multi-step problems, such as arithmetic and commonsense reasoning. However, smaller models (under 100 billion parameters) not only failed to benefit from this approach but sometimes performed worse, generating fluent but illogical reasoning chains. Additionally, they observed variability in performance—sometimes as much as 20\%—due to differences in hand-crafted exemplars created by various annotators.
+
+Building on Wei et al.'s work, Kojima et al. (2022) \cite{kojimaLargeLanguageModels2023} addressed the primary limitation of Chain-of-Thought Prompting: the dependence on hand-crafted exemplars and their associated performance variability. Their approach introduced a simple phrase, "Let’s think step-by-step," to the prompt, encouraging the model to generate logical intermediate reasoning steps. By appending these steps to the original prompt, they achieved notable performance improvements across tasks previously evaluated using Chain-of-Thought Prompting, such as arithmetic and commonsense reasoning. However, while their method reduced reliance on hand-crafted examples, it did not yield as significant a performance boost as the original approach and remained ineffective for smaller models with fewer than 100 billion parameters.

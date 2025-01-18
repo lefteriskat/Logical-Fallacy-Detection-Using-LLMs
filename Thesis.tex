@@ -1,0 +1,75 @@
+\input{preamble/static}
+
+%!TEX TS-program = xelatex
+%!TEX root = ../Thesis.tex
+\RequirePackage[l2tabu,orthodox]{nag} % Old habits die hard
+
+\newcommand{\papersizeswitch}[3]{\ifnum\strcmp{\papersize}{#1}=0#2\else#3\fi}
+\papersizeswitch{b5paper}{\def\classfontsize{10pt}}{\def\classfontsize{12pt}}
+
+\documentclass[\papersize,oneside,openany,showtrims,extrafontsizes]{memoir}
+
+\input{preamble/general}
+\input{preamble/fonts}
+\input{preamble/etc}
+
+\addbibresource{bibliography/Bibliography.bib}
+\renewcommand{\lstlistingname}{Python scripts}
+\renewcommand{\lstlistlistingname}{List of \lstlistingname}
+
+\begin{document}
+
+\prefrontmatter
+\include{prefrontmatter/titlepage}
+\cleartoevenpage
+\include{prefrontmatter/colophon}
+%\clearforchapter
+
+\frontmatter
+\include{frontmatter/Abstract}
+\include{frontmatter/Preface}
+\include{frontmatter/Acknowledgements}
+%\clearforchapter
+\setcounter{secnumdepth}{4}
+\setcounter{tocdepth}{4}
+\tableofcontents
+\newpage
+\listoffigures
+\newpage
+%\listoftables
+%\newpage
+%\lstlistoflistings
+
+%\addcontentsline{toc}{chapter}{Nomenclature}
+%\include{appendices/nomenclt.tex}
+%\printnomenclature
+
+
+%\clearforchapter
+%\mylistoftodos
+
+\mainmatter
+\include{chapters/Introduction}
+% \include{chapters/Background.tex}
+\include{chapters/RelatedWork.tex}
+\include{chapters/Methodology.tex}
+\include{chapters/Evaluation.tex} 
+\include{chapters/Conclusion}
+\include{chapters/FutureWork.tex}
+%\include{chapters/LongTitle}
+%\blinddocument
+
+\printbibliography
+
+
+\appendix 
+%\addcontentsline{toc}{section}{Nomenclature}
+%\include{appendices/AnAppendix}
+%\include{appendices/Bappendix.tex}
+
+
+%\backmatter  
+%\bibliographystyle{ieeetr}
+
+
+\end{document}

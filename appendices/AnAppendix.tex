@@ -1,0 +1,255 @@
+%!TEX root = ../Thesis.tex
+
+
+\chapter{Python Scripts}
+
+Appendix A includes all the developed Python scripts throughout this study. 
+
+
+%C.1includes the scripts for the simulation and damage assessment of the 3D steel frame,
+%while C.2 includes the corresponding scripts for the offshore wind turbine.
+
+\newpage
+\begin{lstlisting}[language=Python, caption = Python Script that create plots for all different scenario's, label=lst:plots]
+#Python Script that create plots for all different scenario's
+#Import all the important packets
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns
+import matplotlib as mpl
+import numpy as np
+import matplotlib.cm
+
+#Read all the data from the file
+df1=pd.read_excel('DataScenarios.xlsx', index_col=0)
+
+df_list=[]
+for i in df1['dfid'].unique():
+    x='df'+str(i)
+    x=df1[df1['dfid'] == i]
+    df_list.append(x)
+    
+sns.set(style="darkgrid")
+
+#add colors
+colors = ['#4daf4a','#e41a1d']
+mylabels = ["Successful","Unsuccessful"]
+       
+fig, ax = plt.subplots()
+###########################################################################
+for df in df_list:
+
+    for percentage in df.Percentage:
+        plt.pie([percentage,100.0 - percentage], autopct='%.2f%%', shadow=True, startangle=90, colors = colors, labels = mylabels)
+        plt.legend()
+        plt.xlabel('Successful Transmissions')
+        plt.show() 
+    index = range(1,len(df)+1)
+    array = []
+    for i in index:
+        array.append(i) 
+
+    fig, ax = plt.subplots()
+    pps = plt.bar(array, df.Percentage, align = 'center', alpha = 0.5, color = 'maroon', width = 0.5)
+    plt.xticks(array)
+    plt.ylabel('Successful Transmissions')
+    plt.title("Successful Rate in Different Experiments")
+    for p in pps:
+        height = p.get_height()
+        ax.text(x=p.get_x() + p.get_width() / 2, y=height+.10, s="{}%".format(height), ha='center',  weight='bold')
+    plt.show()
+    
+\end{lstlisting}
+\newpage
+\begin{lstlisting}[language=Python, caption = Python Script that search for duplications\, check for successful transmissions and find out the overall and individual node PDRs, label=lst:DER]
+#Python Script that search for duplications, check for successful transmissions and find out the overall and individual node DERs.
+#Import all the important packets
+import re
+import subprocess
+import pandas as pd
+from collections import Counter
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+df = pd.DataFrame(columns=['intersections', 'total', 'Percentage'])
+NODE_NUM = 5
+
+# for all nodes
+for node in range(NODE_NUM): 
+    # get output from grep commands and transform into utf8
+    data = subprocess.Popen(['grep "LoRaGWRadio Reception ended: successfully for" logn5tractormobgw1-29.elog | grep "transmissionId"'], shell=True, stdout = subprocess.PIPE)
+    data1 = subprocess.Popen([f'grep "Transmission started:" logn5tractormobgw1-29.elog | grep "transmitterId = {node}" | grep "id"'], shell=True, stdout = subprocess.PIPE)
+    output = data.stdout.read().decode("utf-8")
+    output1 = data1.stdout.read().decode("utf-8")
+
+    rids = [] # receiver ids
+    intersection = [] # the match between rids and tids
+    tids = set() # node duplicates distinct and unordered / transmission ids
+
+    print('{}Searching logfile...{}'
+                .format(bcolors.HEADER, bcolors.ENDC))
+    # split grep command output on transmissionid and get second part
+    for i, item in enumerate(output.split("transmissionId")):
+        if i == 0:
+            continue
+        
+        # get 1st and 2nd numbers with regular expressions
+        tid = re.search(r'\d+', item).group()
+        rid = re.search(r'\d+', item[10:]).group()
+        
+        # check for successful transmissions by matching the previous in the other grep command 
+        for j, item in enumerate(output1.split("id")):
+                if j == 0:
+                    continue
+
+                ida = re.search(r'\d+', item).group()
+
+                if ida == tid :
+                    #print(f'Node {node} send and Found ID: {ida}')
+                    intersection.append(ida)
+
+
+        #print(f'TID: {tid} \t RID: {rid}')
+        rids.append(rid)
+        tids.add(tid)
+
+
+    # casting to a set to get unique values    
+    intersection_set = set(intersection)
+    print(f'Intersection on node {node}: {len(intersection_set)}')
+    # Filing the DataFrame with per node PRR 
+    df.loc[node] = [len(intersection_set), j, len(intersection_set) / j*100] # j is the total for each node 
+
+# Export the dataframe to an excel 
+df.index.name = 'node'
+df.to_excel("output_nodes_stats.xlsx")
+
+print(df)
+print(f'\nCummulative successfull transmission count: {len(rids)}\nIndividual count: {Counter(rids)}')
+print(f'Successfull non-duplicated transmissions: {len(tids)}')    
+
+# Getting the total from mystats ( mystats.txt is created with a custom script embedded in the simulator code)
+cmdout = subprocess.Popen(['cat mystats.txt'], shell=True, stdout = subprocess.PIPE)
+cmdout_proc = cmdout.stdout.read().decode("utf-8")
+total = int(re.search(r'\d+', cmdout_proc).group())
+
+print(f'Total transmissions: {total}')
+
+percentage = len(tids) / total * 100
+print('{}{}Successfull transmission percentage: {:.2f}%{}{}'
+            .format(bcolors.BOLD, bcolors.OKGREEN, percentage, bcolors.ENDC, bcolors.ENDC))
+\end{lstlisting}
+
+
+
+
+\newpage
+\begin{lstlisting}[language=Python, caption = Python Script that visualize the results with standard deviation error bars, label=lst:ploteachnode]
+#Python Script that visualize the results with standard deviation error bars.
+#Import all the important packets
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns
+import matplotlib as mpl
+import numpy as np
+import matplotlib.cm
+
+
+ 
+node_stats = pd.read_excel('tractor_merged.xlsx', index_col=[0])
+# for x nodes
+x=16
+node_list=[]
+for i in range(x):
+  node_list.append(node_stats.loc[node_stats['node'] == i])
+
+node_percentages=[]
+for item in node_list:
+  node_percentages.append(item['Percentage'].to_numpy())
+
+node_averages=[]
+for item in node_percentages:
+  node_averages.append(np.mean(item))
+
+node_stds = []
+for item in node_percentages:
+  node_stds.append(np.std(item))
+
+nodes=[]
+for i in range(x):
+  nodes.append(str(i))
+
+x_pos = np.arange(len(nodes))
+CTEs = node_averages
+error = node_stds
+
+sns.set()
+fig, ax = plt.subplots(figsize=(12, 6))
+plt.ylim([0, 100])
+
+
+df = pd.DataFrame(node_averages,columns=['Percentage'])
+#print(df)
+df.to_excel("final_percentages.xlsx")                    
+
+pps = ax.bar(x_pos, CTEs, yerr=error, align='center', alpha=0.5, ecolor='maroon', capsize=10, width = 0.5)
+for p in pps:
+    height = p.get_height()
+    ax.text(x=p.get_x() + p.get_width() / 2, y=height+ 4, s="{:.2f}%".format(height), ha='center',  weight='bold')
+
+#ax.text(4.5, 100, 'Jain\'s fairness \nindex = 0.8744', size=15, color='purple')    
+ax.set_ylabel('Packet Delivery Rate / PDR')
+ax.set_xticks(x_pos)
+ax.set_xticklabels(nodes)
+ax.set_xlabel('Nodes')
+ax.set_title('Successful Rate on each node')
+
+
+# Save the figure and show
+plt.tight_layout()
+plt.savefig('bar_plot_with_error_bars.png')
+plt.show()
+ 
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption = Python Script that calculates Jain's fairness index, label=lst:jindex]
+#Python Script that calculates Jain's fairness index.
+#Import all the important packets
+import pandas as pd 
+import matplotlib.pyplot as plt 
+import seaborn as sns
+import matplotlib as mpl
+import numpy as np
+import matplotlib.cm
+
+#throughputs = [0.4244, 0.4942, 0.3314, 0.3140, 0.4128]
+df1=pd.read_excel('output_nodes_stats_1gw.xlsx', index_col=0)
+throughputs=df1['Percentage'].div(100).round(4).tolist()
+throughputs
+
+def jains_fairness_index(throughputs):
+        
+    n = len(throughputs)
+    temp = sum([ (x**2) for x in throughputs])
+    jains_index = sum(throughputs) ** 2 / (n * temp)
+ 
+    return jains_index
+
+
+jains_index = jains_fairness_index(throughputs)
+print(jains_index)
+\end{lstlisting}
+
+
+All the files with the source code and the python scripts can be found in this \href{https://github.com/memorial4/LoRa_Mobility}{link}.
+
+
