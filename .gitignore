@@ -1,0 +1,34 @@
+# LaTeX intermediate and auxiliary files
+*.aux
+*.log
+*.toc
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+
+# Backup files
+*~
+*.bak
+*.swp
+*.tmp
+
+# Generated PDF and other output files
+*.pdf
+*.dvi
+*.ps
+
+# Editors' temporary files
+*.DS_Store
+*.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build directories (if used)
+_build/
+out/
+

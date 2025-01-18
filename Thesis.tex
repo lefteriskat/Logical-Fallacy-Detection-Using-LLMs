@@ -14,6 +14,13 @@
 \input{preamble/etc}
 
 \addbibresource{bibliography/Bibliography.bib}
+\AtEveryBibitem{%
+  \clearfield{urldate}  % Suppress urldate
+  \clearfield{url}  % Suppress URL
+  \clearfield{month}  % Suppress Month
+  \clearfield{doi}  % Suppress DOI
+}
+
 \renewcommand{\lstlistingname}{Python scripts}
 \renewcommand{\lstlistlistingname}{List of \lstlistingname}
 
@@ -34,8 +41,8 @@
 \setcounter{tocdepth}{4}
 \tableofcontents
 \newpage
-\listoffigures
-\newpage
+% \listoffigures
+% \newpage
 %\listoftables
 %\newpage
 %\lstlistoflistings
@@ -68,8 +75,8 @@
 %\include{appendices/Bappendix.tex}
 
 
-%\backmatter  
-%\bibliographystyle{ieeetr}
+% \backmatter  
+\bibliographystyle{ieeetr}
 
 
 \end{document}
