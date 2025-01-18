@@ -17,9 +17,12 @@
 *.tmp
 
 # Generated PDF and other output files
-*.pdf
 *.dvi
 *.ps
+*.bbl
+*.bcf
+*.blg
+*.run.xml
 
 # Editors' temporary files
 *.DS_Store
