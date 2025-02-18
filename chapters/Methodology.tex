@@ -1,10 +1,270 @@
 \chapter{Method}
 
+In this chapter we describe the methodology used to evaluate the performance of the models in the task of logical fallacy detection. We begin by describing the dataset used for the experiments, followed by the models and the evaluation metrics used. We then describe the experimental setup, including the zero-shot, the categorization of the fallacies inluded in our dataset of choice, the chain-of-thought prompting and the multi-round chain of thought approach used to evaluate the models' performance.
+
+\section{Dataset}
+
+Missing, describe LOGIC dataset, why it was chosen and include figures.
+
+
+\section{Models}
+
+For our experiments, we selected Falcon-Mamba-7B-Instruct, Meta-Llama-3.1-8B-Instruct, and Mistral-7B-Instruct-v0.3 as our primary models. Since our work involves extremely long prompts—including fallacy names, definitions, and multi-round prompting—we needed models with strong long-context retention and instruction-following capabilities. These models were chosen for their ability to process and reason over extended input sequences while maintaining efficiency and logical coherence.
+\par
+Each of these models brings unique architectural strengths: Falcon-Mamba-7B-Instruct is optimized for memory-efficient state-space modeling, Meta-Llama-3.1-8B-Instruct leverages advanced positional embeddings to enhance long-sequence comprehension, and Mistral-7B-Instruct utilizes optimized attention mechanisms to improve logical reasoning across long text passages. Their instruction-tuning capabilities and proficiency in zero-shot/few-shot reasoning make them particularly well-suited for fallacy detection tasks, where nuanced reasoning over extended textual input is required.
+\par
+Falcon-Mamba-7B-Instruct represents a breakthrough in non-Transformer architectures, employing state-space modeling (SSM) instead of self-attention to enable scalable, memory-efficient long-context processing (Zuo et al., 2024) \cite{zuo2024falconmambacompetitiveattentionfree}. Unlike traditional LLMs, which face quadratic complexity in attention computation, Falcon-Mamba-7B uses a structured recurrence mechanism to maintain constant memory usage regardless of sequence length. This makes it highly effective for document-level reasoning and real-time applications. Additionally, it has been trained on a massive 5.8 trillion token dataset, incorporating instruction tuning, multilingual data, and domain-specific corpora, further enhancing its accuracy in complex tasks.
+\par
+Meta-Llama-3.1-8B-Instruct, part of the LLaMA (Large Language Model Meta AI) family, extends Transformer-based architectures by integrating Grouped Query Attention (GQA) and Rotary Positional Embeddings (RoPE), leading to improved efficiency in reasoning and long-context comprehension (Meta AI, 2024) \cite{grattafiori2024llama3herdmodels} . Trained on 15 trillion tokens, this model is fine-tuned for multilingual applications, logical inference, and structured decision-making tasks. Empirical benchmarks show that Meta-Llama-3.1-8B-Instruct outperforms earlier LLaMA models in several tasks including math reasoning andmultilingual benchmarks.
+\par
+Mistral-7B-Instruct-v0.3 is a highly optimized Transformer model designed to balance reasoning accuracy with inference efficiency, making it a strong alternative to larger LLMs (Jiang et al., 2023) \cite{jiang2023mistral7b}. It incorporates Sliding Window Attention (SWA) and Grouped Query Attention (GQA) to preserve context over long sequences while maintaining fast inference speeds, which is particularly beneficial for multi-step logical reasoning. Despite its relatively compact 7-billion-parameter size, Mistral-7B-Instruct delivers competitive results in code generation, commonsense reasoning, and structured question-answering, outperforming larger models while using significantly fewer computational resources.
+\par
+The selection of Falcon-Mamba-7B-Instruct, Meta-Llama-3.1-8B-Instruct, and Mistral-7B-Instruct-v0.3 was driven by their superior long-context reasoning capabilities, efficient processing mechanisms, and strong instruction-following performance. Each model brings distinct architectural strengths that contribute to handling the complexity of logical fallacy detection, particularly when working with extended prompts and multi-step reasoning tasks.
+
+
+
 \section{Zero-Shot}
+At first, we conducted a set of zero-shot experiments with the above-stated models. Zero-shot experiments test the capacity of a model to carry out a task without having been specifically trained on that task, thus proving to be an effective method for assessing whether these models are capabl of performing this task without any fine-tuning. To test their performance and consistency, based on previous studies suggesting that the wording of a prompt can signifcalty affect the model's response, we designed and executed two different prompts for each of the models asking forthe same task but with some minor differences in wording and on the specific instructions. The prompts, as may be accessed, were specifically designed to test the models' capacity for classifying fallacious arguments regardless of explicit supervision or exposure to labeled training data.
+
+Furthermore, to examine the possible effect of explicit definitional instruction on the performance of the models, we included two more variations for each prompt. One variation included full definitions of the logical fallacies, with explicit explanations and contextual information about the nature and structure of each fallacy. In contrast, the second variation explicitly excluded these definitions, leaving the models to depend on their prior knowledge on te topic and reasoning capabilities alone to detect instances of fallacious argumentation.
+
+\begin{table}[H]
+    \centering
+    \renewcommand{\arraystretch}{1.1}
+    \captionsetup{justification=centering}
+    \caption{Comparison of Zero-Shot Fallacy Detection Prompts}
+    \scriptsize % Reduce text size
+    \begin{tabular}{|m{0.48\textwidth}|m{0.48\textwidth}|}
+        \hline
+        \textbf{Prompt 1} & \textbf{Prompt 2} \\
+        \hline
+        \parbox[t]{0.45\textwidth}{%
+            You will be provided with a text segment, delimited by \#\#\#\# characters, and your task is to classify it into one of the fallacy types listed below. \\
+            
+            Provide your output in JSON format with the key: `detected\_fallacy`. The value should be the name of the detected fallacy, chosen from the list below. Do not include any explanation or commentary. \\
+
+            The \#\#\#\# characters are only delimiters for the segment. Do not include them in your classification or output. \\
+
+            The possible fallacy types are: \\
+            1. Appeal To Emotion: attempting to arouse non-rational sentiments within the intended audience in order to persuade. \\
+            2. False Causality: occurs when someone mistakenly assumes that because one event follows another, the first event caused the second, without sufficient evidence for a causal link. \\
+            3. Ad Hominem: The opponent attacks a person instead of arguing against the claims that the person has put forward. \\
+            4. Faulty Generalization: A generalization is drawn from a sample which is too small, it is not representative of the population or it is not applicable to the situation if all the variables are taken into account. \\
+            5. False Dilemma: Presenting two alternative options as the only possibilities, when in fact more possibilities exist. As an the extreme case, tell the audience exactly what actions to take, eliminating any other possible choices (Dictatorship). \\
+            6. Fallacy of Relevance: The argument supporting the claim diverges the attention to issues which are irrelevant for the claim at hand. \\
+            7. Fallacy of Credibility: happens when someone argues that a claim is true simply because an authority or expert believes it, even if that authority is not a reliable or relevant source on the topic. \\
+            8. Ad Populum: A fallacious argument which is based on affirming that something is real or better because the majority thinks so. \\
+            9. Circular Reasoning: A fallacy where the end of an argument comes back to the beginning without having proven itself. \\
+            10. Fallacy of Extension: An argument that attacks an exaggerated or caricatured version of your opponent’s position. \\
+            11. Equivocation: An argument which uses a key term or phrase in an ambiguous way, with one meaning in one portion of the argument and then another meaning in another portion of the argument. \\
+            12. Fallacy of Logic: An error in the logical structure of an argument. \\
+            13. Intentional Fallacy: Some intentional (sometimes subconscious) action/choice to incorrectly support an argument. \\
+
+            The segment to be classified is the following: \#\#\#\#{segment}\#\#\#\# \\
+
+            Provide your output in strict JSON format with the key `detected_fallacy`. For example: \\
+            \{
+              "detected\_fallacy": "name of fallacy"
+            \}
+        }
+        &
+        \parbox[t]{0.45\textwidth}{%
+            You are a knowledgeable expert in analysing fallacies in discourses. \\
+            Please ensure that your responses are socially unbiased in nature. \\
+            Your response should not be lengthy. \\
+            Answer the last question. \\
+
+            Based on the following definitions of fallacies: \\
+            1. Appeal To Emotion: attempting to arouse non-rational sentiments within the intended audience in order to persuade. \\
+            2. False Causality: occurs when someone mistakenly assumes that because one event follows another, the first event caused the second, without sufficient evidence for a causal link. \\
+            3. Ad Hominem: The opponent attacks a person instead of arguing against the claims that the person has put forward. \\
+            4. Faulty Generalization: A generalization is drawn from a sample which is too small, it is not representative of the population or it is not applicable to the situation if all the variables are taken into account. \\
+            5. False Dilemma: Presenting two alternative options as the only possibilities, when in fact more possibilities exist. As an the extreme case, tell the audience exactly what actions to take, eliminating any other possible choices (Dictatorship). \\
+            6. Fallacy of Relevance: The argument supporting the claim diverges the attention to issues which are irrelevant for the claim at hand. \\
+            7. Fallacy of Credibility: happens when someone argues that a claim is true simply because an authority or expert believes it, even if that authority is not a reliable or relevant source on the topic. \\
+            8. Ad Populum: A fallacious argument which is based on affirming that something is real or better because the majority thinks so. \\
+            9. Circular Reasoning: A fallacy where the end of an argument comes back to the beginning without having proven itself. \\
+            10. Fallacy of Extension: An argument that attacks an exaggerated or caricatured version of your opponent’s position. \\
+            11. Equivocation: An argument which uses a key term or phrase in an ambiguous way, with one meaning in one portion of the argument and then another meaning in another portion of the argument. \\
+            12. Fallacy of Logic: An error in the logical structure of an argument. \\
+            13. Intentional Fallacy: Some intentional (sometimes subconscious) action/choice to incorrectly support an argument. \\
+
+            Given a segment of discourse below, determine which of the fallacies defined above is present in the argument? \\
+
+            Segment: \\
+            {segment} \\
+
+            Respond strictly in JSON format. For example: \\
+            \{
+              "detected\_fallacy": "name of fallacy"
+            \}
+
+            Do not include any explanation or additional commentary.
+        } \\
+        \hline
+    \end{tabular}
+\end{table}
+
+
+The design of the experiment was conceived to consider two main research questions. First, we aimed to find out if the models are able to recognize logical fallacies correctly without being provided with explicit definitions. This part of the experiment enabled us to assess the extent to which pre-trained language models have an internalized appreciation of both logical reasoning and fallacious argumentation derived from their previous training data alone. Second, we wished to measure the degree to which the addition of formal definitions affected the performance of the models. That is, we inquired if providing explicit definitions would have a measurable boost in accuracy, consistency, or confidence in the classification by the models.
+
+This methodological approach enabled us to develop a clearer understanding of not only the potential but also the limitations of zero-shot learning when it comes to logical fallacy identification, but also how model performance on challenging reasoning tasks is facilitated by linguistic context and definitional knowledge.
 
 \section{From fine-grained to coarse grained classes}
 
-\section{Single-round Chain of thought}
+By structuring the fallacies in a hierarchical manner, we aimed to explore how well the models could generalize their reasoning across different levels of categorization. Specifically, we sought to determine whether the models exhibited stronger classification abilities at the \textbf{coarse-grained level} (recognizing broad fallacy types) or the \textbf{fine-grained level} (distinguishing between individual fallacies within each category). This approach allowed us to assess the extent to which language models understand logical fallacy classification beyond simple keyword recognition, providing deeper insights into their reasoning capabilities.
+
+\subsection{Coarse-grained classes by Copi}
+Copi’s \cite{1CopiIrving} classification system of fallacies of reasoning comes from formal and informal logic, an ordered method toward evaluating faulty reasoning. Copi’s classification,revolves around argument soundness and argument validity, placing it as an essential cornerstone for modern educational materials on logic and critical thinking. Copi classifies fallacies of reasoning under four general categories, namely, Fallacies of Relevance, Fallacies of Defective Induction, Fallacies of Presumption, and Fallacies of Ambiguity.  
+\par
+Fallacies of Relevance involve premises that bear no relevance to an argument’s conclusion, even if these premises sound plausible. \textit{Ad hominem}, an attack against the speaker, not the claim, \textit{ad populum}, an argument that makes an appeal to people, not facts, and \textit{appeal to emotion}, an argument playing on emotion, not reason, fall under this classification. Relevance fallacies, such as intentional fallacy, an argument distorting an argument’s meaning so as to change an argument’s emphasis, fall under this classification.  
+\par
+Fallacies of Defective Induction occur when an argument makes an unwarranted conclusion from incomplete or unreliable evidence. These fallacies involve \textit{false causality}, assuming causation without proof; \textit{false dilemma}, posing an incomplete list of choices when there are many, many more; and \textit{faulty generalization}, drawing general conclusions from an incomplete, unrepresentative sample. Others involve the \textit{fallacy of credibility}, relying upon unverified authority, and \textit{deductive fallacy}, applying the rule of reasoning improperly.  
+\par
+Fallacies of Presumption involve argument presupposing that which it seeks to confirm, including \textit{circular reasoning}, wherein an argument’s conclusion is contained within the premise(s) .  
+\par
+Lastly, Fallacies of Ambiguity play upon linguistic uncertainty, utilizing imprecise, deceptive language, including \textitP{equivocation}, shifting the terms' meaning in an argument.  
+\par
+Copi’s classification provides an orderly way of analyzing reasoning faults, bifurcating structural, evidential, and rhetorical flaws, making it an invaluable tool for assessing arguments.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={draw, align=center, font=\small, minimum width=3.0cm, minimum height=1cm, rounded corners=3pt},
+        category/.style={fill=blue!30, text=black, font=\bfseries\footnotesize, minimum width=3.0cm, minimum height=1.3cm},
+        subfallacy/.style={fill=gray!15, minimum width=3.0cm, minimum height=1cm},
+        node distance=0.5cm and 2cm  % Keeping the exact spacing as before
+    ]
+        % Categories (Top Row)
+        \node[category] (relevance) {Fallacy of \\ Relevance};
+        \node[category, right=0.2cm of relevance] (induction) {Fallacy of \\ Defective Induction};
+        \node[category, right=0.2cm of induction] (presumption) {Fallacy of \\ Presumption};
+        \node[category, right=0.2cm of presumption] (ambiguity) {Fallacy of \\ Ambiguity};
+
+        % Fallacies under "Fallacy of Relevance" (First Column)
+        \node[subfallacy, below=0.3cm of relevance] (adHominem) {Ad Hominem};
+        \node[subfallacy, below=0.1cm of adHominem] (adPopulum) {Ad Populum};
+        \node[subfallacy, below=0.1cm of adPopulum] (appealEmotion) {Appeal to Emotion};
+        \node[subfallacy, below=0.1cm of appealEmotion] (intentionalFallacy) {Intentional Fallacy};
+        \node[subfallacy, below=0.1cm of intentionalFallacy] (fallacyExtension) {Fallacy of Extension};
+        \node[subfallacy, below=0.1cm of fallacyExtension] (fallacyRelevance) {Fallacy of Relevance};
+
+        % Fallacies under "Fallacy of Defective Induction" (Second Column)
+        \node[subfallacy, below=0.3cm of induction] (falseCausality) {False Causality};
+        \node[subfallacy, below=0.1cm of falseCausality] (falseDilemma) {False Dilemma};
+        \node[subfallacy, below=0.1cm of falseDilemma] (faultyGeneralization) {Faulty Generalization};
+        \node[subfallacy, below=0.1cm of faultyGeneralization] (deductiveFallacy) {Deductive Fallacy}; % Updated entry
+        \node[subfallacy, below=0.1cm of deductiveFallacy] (fallacyCredibility) {Fallacy of Credibility};
+
+        % Fallacies under "Fallacy of Presumption" (Third Column)
+        \node[subfallacy, below=0.3cm of presumption] (circularReasoning) {Circular Reasoning};
+
+        % Fallacies under "Fallacy of Ambiguity" (Fourth Column)
+        \node[subfallacy, below=0.3cm of ambiguity] (equivocation) {Equivocation};
+        \node[subfallacy, below=0.1cm of equivocation] (miscellaneous) {Miscellaneous};
+
+    \end{tikzpicture}
+    \caption{Copi’s Categorization of Logical Fallacies (Updated Version)}
+    \label{fig:copi_fallacies_updated}
+\end{figure}
+
+\subsection{Coarse-grained classes by Aristotle}
+
+The following classification of logical fallacies has its roots in Aristotle's \cite{wisse1989ethos} three modes of persuasion—Ethos (credibility), Pathos (emotion), and Logos (logic)—as described in his work Rhetoric \cite{rapp2002aristotle}. These modes represent the fundamental ways in which arguments persuade an audience, and they serve as the basis for Aristotle’s categorization of rhetoric schemes. We use these categories to classifiy the fallacies of the LOGIC dataset based on the work of Helwe et al. (2024) \cite{helwe2023mafalda}.
+\par
+The Fallacy of Credibility (Ethos fallacies) occurs when an argument cites an untrustworthy source or authority over sound reasoning. Ad hominem, whereby the speaker attacks one’s character, not one’s argument, \textit{ad populum}, whereby one cites popular opinion as proof of truth, and the \textit{fallacy of credibility}, whereby an argument rests upon nothing other than an authority figure’s approval, even if the authority figure has no expertise, fall under this category. These fallacies play upon apparent credibility, not verifiable facts, so are very influential in political and social contexts.
+\par
+The Fallacy of Logic (Logos-based fallacies) entails reasoning fallacies that weaken the soundness of an argument by distorting form. Some fallacies that fall under this category are \textit{false causality}, wherein causation gets mixed up with correlation; \textit{false dilemma}, wherein only one out of several possible choices is shown; and \textit{faulty generalization}, wherein a conclusion is drawn from an incomplete, unbalanced sample. Other fallacies here are \textit{circular reasoning}, wherein an argument takes an argument as one of its premises, and \textit{equivocation}, wherein one utilizes ambiguous terms.
+\par
+Lastly, the Fallacy of Emotion (Pathos-based fallacies) utilizes emotional appeal to persuade, not reason. This category involve \textit{appeal to emotion}, wherein one utilizes emotion over facts; \textit{intentional fallacy}, wherein one distorts one’s intent as proof of one’s accuracy; and \textit{fallacy of extension}, wherein one distorts an opponent’s argument so it is easy to demolish.
+\par
+By categorizing fallacies under these categories of rhetoric, this classification has an orderly means of analyzing faulty reasoning, as well as an excellent tool by which one may analyze how AI models discriminate various argumentation fallacies.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        every node/.style={draw, align=center, font=\small, minimum width=3.0cm, minimum height=1cm, rounded corners=3pt},
+        category/.style={fill=blue!30, text=black, font=\bfseries\footnotesize, minimum width=3.0cm, minimum height=1.3cm},
+        subfallacy/.style={fill=gray!15, minimum width=3.0cm, minimum height=1cm},
+        node distance=0.5cm and 2cm  % Keeping exact distances
+    ]
+        % Categories (Top Row)
+        \node[category] (credibility) {Fallacy of \\ Credibility};
+        \node[category, right=0.2cm of credibility] (logic) {Fallacy of \\ Logic};
+        \node[category, right=0.2cm of logic] (emotion) {Fallacy of \\ Emotion};
+
+        % Fallacies under "Fallacy of Credibility" (First Column)
+        \node[subfallacy, below=0.3cm of credibility] (adHominem) {Ad Hominem};
+        \node[subfallacy, below=0.1cm of adHominem] (adPopulum) {Ad Populum};
+        \node[subfallacy, below=0.1cm of adPopulum] (fallacyCredibility) {Fallacy of Credibility};
+
+        % Fallacies under "Fallacy of Logic" (Second Column)
+        \node[subfallacy, below=0.3cm of logic] (falseCausality) {False Causality};
+        \node[subfallacy, below=0.1cm of falseCausality] (falseDilemma) {False Dilemma};
+        \node[subfallacy, below=0.1cm of falseDilemma] (faultyGeneralization) {Faulty Generalization};
+        \node[subfallacy, below=0.1cm of faultyGeneralization] (fallacyLogic) {Deductive Fallacy};
+        \node[subfallacy, below=0.1cm of fallacyLogic] (circularReasoning) {Circular Reasoning};
+        \node[subfallacy, below=0.1cm of circularReasoning] (equivocation) {Equivocation};
+        \node[subfallacy, below=0.1cm of equivocation] (fallacyRelevance) {Fallacy of Relevance};
+
+        % Fallacies under "Fallacy of Emotion" (Third Column)
+        \node[subfallacy, below=0.3cm of emotion] (appealEmotion) {Appeal to Emotion};
+        \node[subfallacy, below=0.1cm of appealEmotion] (intentionalFallacy) {Intentional Fallacy};
+        \node[subfallacy, below=0.1cm of intentionalFallacy] (fallacyExtension) {Fallacy of Extension};
+
+    \end{tikzpicture}
+    \caption{Aristotle’s Categorization of Logical Fallacies}
+    \label{fig:aristotle_fallacies}
+\end{figure}
 
 
-\section{Multi-round chain of thought}
+\section{Chain of thought}
+
+As described in Chapter 2, Chain-of-Thought (CoT) prompting has significantly advanced the reasoning capability of large language models (LLMs) on wide-ranging tasks. With its success in logical inference and structured reasoning, we decided to use CoT prompting to the task of fallacy detection.
+
+Specifically, we utilized the method developed by Kojima et al. (2023) \cite{kojima2022large}, which demonstrated that even a simple instruction—“Let’s think step by step”—could considerably improve model performance on zero-shot reasoning tasks. By adding this instruction to our prompts, we wanted to test whether asking the model to break down its reasoning process would enhance its ability to detect logical fallacies. This approach allowed us to explore whether LLMs could improve their reasoning in fallacy detection without requiring additional training or fine-tuning.
+
+By comparing the model’s responses with and without CoT prompts, we aimed to determine how much step-by-step reasoning contributes to more reliable fallacy detection. The findings could provide insight into how reasoning-based prompting techniques can be leveraged to enhance LLM performance in the fallacy detection task.
+
+
+
+\section{Multi-round chain of thought, from coarse-grained to fine-grained fallacy types}
+
+In this section, we introduce a multi-round chain of thought approach to test how accurately the model performs in logical fallacy classification. Based on Least-To-Most propmting introduced by Zhou et al. \cite{zhou2023leasttomostpromptingenablescomplex} we decided to use the categorizations described above to introduce a multi-round chain of thought experiment. This approach is designed to test the model's ability to classify logical fallacies in a step-by-step manner, starting from coarse-grained categories and moving towards fine-grained categories. This method allows us to evaluate whther the model's performance would increase if we start from an easier task and move towards a more difficult one.
+\par
+The experiment begins by having the model label a given text segment as falling into one of the coarse-grained categories of fallacies listed in the previous sections. Following this, the model is presented with the fine-grained fallacy categories that fall within the selected coarse-grained category and it is asked to select the most appropriate fine-grained fallacy category. This step is crucial as it tests if the model is able to make more specific classifications by using the taxonomy that has been presented to it.
+\par
+\begin{figure}[H]
+    \centering
+    \begin{tcolorbox}[colback=white, colframe=black, title={Multi-Round Chain of Thought Experiment}, sharp corners=south]
+        
+        \begin{tcolorbox}[colback=gray!10, colframe=black, sharp corners=south]
+        \textbf{System:} You are a knowledgeable expert in analyzing fallacies in discourses. \\
+        Please ensure that your responses are socially unbiased in nature. Your response should not be lengthy.
+        \end{tcolorbox}
+
+        \begin{tcolorbox}[colback=blue!5, colframe=black, sharp corners=south]
+        \textbf{User:} Classify the segment into one of the coarse-grained categories.
+        \end{tcolorbox}
+
+        \begin{tcolorbox}[colback=green!5, colframe=black, sharp corners=south]
+        \textbf{Assistant:} The segment belongs to the \textit{\{Predicted coarse-grained category\}}.
+        \end{tcolorbox}
+
+        \begin{tcolorbox}[colback=blue!5, colframe=black, sharp corners=south]
+        \textbf{User:} Based on your response, the text segment belongs to the \textit{\{Predicted coarse-grained category\}} high-level fallacy type.\\
+        This includes the following fine-grained fallacy types: \\
+        \textit{\{List of fine-grained fallacies under this category\}} \\
+        You should now determine which of the above-mentioned fallacy types occurs in the segment given before.
+        \end{tcolorbox}
+
+        \begin{tcolorbox}[colback=green!5, colframe=black, sharp corners=south]
+        \textbf{Assistant:} The segment contains the \textit{\{Predicted fine-grained fallacy type\}}.
+        \end{tcolorbox}
+    \end{tcolorbox}
+    \caption{Multi-Round Chain of Thought Prompt}
+\end{figure}
+
+By structuring classification in a multi-round style, we attempt to determine if iterative prompting—having the model prompted successively through broader to more refined classes—is more effective than having it classify in a single attempt. This approach allows us to examine the model's reasoning capacity through a step-by-step thinking process, from a broad categorization to a narrower one. Therefore, it offers valuable insight into the model's reasoning process and its capacity for fine distinction in logical fallacy detection.
+
+
